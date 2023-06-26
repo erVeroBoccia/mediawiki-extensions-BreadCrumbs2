@@ -27,7 +27,8 @@
 		"SidebarBeforeOutput": "BreadCrumbs2Hooks::onSidebarBeforeOutput",
 		"PageSaveComplete": "BreadCrumbs2Hooks::onPageSaveComplete",
 		"CategoryAfterPageRemoved": "BreadCrumbs2Hooks::onCategoryAfterPageRemoved",
-		"BeforePageDisplay":"BreadCrumbs2Hooks::onBeforePageDisplay"
+		"BeforePageDisplay":"BreadCrumbs2Hooks::onBeforePageDisplay",
+		"LoadExtensionSchemaUpdates": "BreadCrumbs2Hooks::onLoadExtensionSchemaUpdates"
 	},
 	"config": {
 		"BreadCrumbs2RemoveBasePageLink": {

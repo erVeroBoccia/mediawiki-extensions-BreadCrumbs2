@@ -150,4 +150,31 @@ class BreadCrumbs2Hooks {
 
 	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ){
 	}
+	
+	/**
+	 * Creates the necessary database table when the user runs
+	 * maintenance/update.php.
+	 *
+	 * @param DatabaseUpdater $updater
+	 */
+	public static function onLoadExtensionSchemaUpdates( DatabaseUpdater $updater ) {
+
+		if (file_exists(__DIR__ . '/sql/breadcrumbs2.sql')) {
+            $create_view_script = file_get_contents(__DIR__ . '/sql/breadcrumbs2.sql');
+            if($create_view_script !== false){
+                $lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
+				$dbr = $lb->getConnection( DB_PRIMARY );
+                $res = $dbr->query($create_view_script);
+            }
+        }
+         else{
+			// May not write this line to the log file
+            wfDebug("Breadcrumbs2 error - breadcrumbs2.sql: View not created.");
+        }
+
+		// it does not allow the creation of the view
+        //$file = __DIR__ . '/sql/breadcrumbs2.sql';
+        //$updater->addExtensionTable( 'breadcrumbs2', $file );
+				
+	}
 }
