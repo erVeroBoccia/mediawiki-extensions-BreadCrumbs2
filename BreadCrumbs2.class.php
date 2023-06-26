@@ -87,7 +87,7 @@ class BreadCrumbs2 {
 	 * @param Title $title
 	 * @param User $user
 	 */
-	public function __construct( array $categories, Title $title, User $user ) {
+	public function __construct( array $categories, Title $title, User $user, string $crumbs_injection = "" ) {
 		$this->user = $user;
 		if ( !empty( $categories ) ) {
 			$this->firstCategoryInPage = $categories[0];
@@ -99,21 +99,24 @@ class BreadCrumbs2 {
 			$categories[] = $title->getNsText();
 		}
 
-		$crumbs = $this->matchFirstCategory( $categories );
-
-		$this->crumbPath = $crumbs[0];
+		$this->crumbPath = $crumbs_injection;
+		if(empty($crumbs_injection)){
+			$crumbs = $this->matchFirstCategory( $categories);
+			$this->crumbPath = $crumbs[0];
+		}
 
 		# add current title
 		$currentTitle = Html::rawElement( 'span', [ 'id' => 'breadcrumbs2-currentitle' ], $title->getText() );
 		$this->breadcrumb = trim( $this->crumbPath . ' ' . $currentTitle );
-
+		
+		/* DA APPROFONDIRE
 		$categories[] = $title->getText();
-
+		
 		# Mark the corresponding tab of the sidebar as active
 		$crumbs = $this->matchFirstCategory( $categories );
 		$this->sidebarText = $crumbs[1];
 		$this->logoPath = $crumbs[2];
-
+		 */
 		return true;
 	}
 
@@ -123,29 +126,33 @@ class BreadCrumbs2 {
 	 * @param array $categories
 	 * @return array
 	 */
-	function matchFirstCategory( array $categories ) {
+	function matchFirstCategory( array $categories, $insisti = false ) {
 		# First load and parse the template page
+		//self::disableCache();
 		$content = $this->loadTemplate();
 		# Navigation list
 		$breadcrumb = '';
 		preg_match_all( "`<li>\s*?(.*?)\s*</li>`", $content, $matches, PREG_PATTERN_ORDER );
 
-		# Look for the first matching category or a default string
-		foreach ( $matches[1] as $nav ) {
-			$pos = strpos( $nav, self::DELIM ); // End of category
-			if ( $pos !== false ) {
-				$cat = trim( substr( $nav, 0, $pos ) );
-				$crumb = trim( substr( $nav, $pos + 1 ) );
-				// Is there a match for any of our page's categories?
-				if ( $cat == 'default' ) {
-					$breadcrumb = $crumb;
-				} elseif ( in_array( $cat, $categories ) ) {
-					$breadcrumb = $crumb;
-					break;
+		if (str_contains($content, $categories[0] ?? '')){
+		
+			# Look for the first matching category or a default string
+			foreach ( $matches[1] as $nav ) {
+
+				$pos = strpos( $nav, self::DELIM ); // End of category
+				if ( $pos !== false ) {
+					$cat = trim( substr( $nav, 0, $pos ) );
+					$crumb = trim( substr( $nav, $pos + 1 ) );
+					// Is there a match for any of our page's categories?
+					if ( $cat == 'default' ) {
+						$breadcrumb = $crumb;
+					} elseif ( in_array( $cat, $categories ) ) {
+						$breadcrumb = $crumb;
+						break;
+					}
 				}
 			}
 		}
-
 		return self::normalizeParameters( $breadcrumb, self::DELIM, 3 );
 	}
 
@@ -167,7 +174,7 @@ class BreadCrumbs2 {
 				[ __CLASS__, 'translate_variable' ],
 				$template
 			);
-
+ 			//self::disableCache();
 			# Use the parser preprocessor to evaluate conditionals in the template
 			# Copy the parser to make sure we don't trash the parser state too much
 			$parser = clone self::getParser();
@@ -249,6 +256,7 @@ class BreadCrumbs2 {
 	 * @return Parser
 	 */
 	private static function getParser() {
+		//return MediaWikiServices::getInstance()->getParserFactory()->getInstance();
 		return MediaWikiServices::getInstance()->getParser();
 	}
 

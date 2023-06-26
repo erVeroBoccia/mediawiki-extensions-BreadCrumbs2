@@ -25,9 +25,28 @@ class BreadCrumbs2Hooks {
 
 		# Get the list of categories for the current page
 		$categories = $skin->getOutput()->getCategories();
+
+		if (($key = array_search('MediaWiki', $categories)) !== false) {
+    			unset($categories[$key]);
+			$categories=array_values($categories);
+		}
+
 		$title = $skin->getRelevantTitle();
 
+		# Search a breadcrubs for parent current of the current page
 		$breadCrumbs2 = new BreadCrumbs2( $categories, $title, $skin->getUser() );
+
+		# If there is no breadcrumbs for parent category of the current page, it creates it
+		if(!$breadCrumbs2->hasBreadCrumbs()){
+			$updateClass = new BreadCrumbs2Update;
+			$crumbs_inj = $updateClass->addBreadCrumb($categories);
+			if(!empty($crumbs_inj)){
+				$breadCrumbs2 = new BreadCrumbs2( $categories, $title, $skin->getUser(), ($crumbs_inj ?? '') );
+			}
+		}
+
+		# Set the breadcrumbs
+		$sidebarText = $breadCrumbs2->getSidebarText();
 		$skin->getOutput()->setProperty( 'BreadCrumbs2', $breadCrumbs2 );
 
 		$config = MediaWikiServices::getInstance()->getMainConfig();
@@ -52,6 +71,7 @@ class BreadCrumbs2Hooks {
 		if ( $removeBasePageLink && $title->isSubpage() && $breadCrumbs2->hasBreadCrumbs() ) {
 			return false;
 		}
+
 		return true;
 	}
 
@@ -65,7 +85,6 @@ class BreadCrumbs2Hooks {
 		if ( !$breadCrumbs2 ) {
 			return;
 		}
-
 		$sidebarText = $breadCrumbs2->getSidebarText();
 		if ( $sidebarText ) {
 			# See if there's a corresponding link in the sidebar and mark it as active.
@@ -79,5 +98,56 @@ class BreadCrumbs2Hooks {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Source: https://www.mediawiki.org/wiki/Manual:Hooks/PageSaveComplete
+	 * @param Skin $skin
+	 * @param array &$sidebar
+	 * @param $wikiPage: WikiPage that was modified
+	 * @param $user: user performing the modification
+	 * @param $summary: edit summary/comment
+	 * @param $flags: EDIT_… flags passed to WikiPage::doEditContent()
+	 * @param $revisionRecord: new MediaWiki\Revision\RevisionRecord of the article
+	 * @param $editResult: object storing information about the effects of this edit.
+	 * @retrun return false to stop other hook handlers from being called; save cannot be aborted.
+	 */
+	public static function onPageSaveComplete(  $wikiPage, $user, $summary, $flags, $revisionRecord, $editResult ) {
+												
+		wfDebug("BreadCrumbs2 Hook onPageSaveComplete");
+	}
+	
+        /**
+         * Source: https://www.mediawiki.org/wiki/Manual:Hooks/CategoryAfterPageRemoved
+         * @param $category: Category that page was removed from
+	 * @param $wikiPage: WikiPage that was removed
+	 * @param $id: Page ID - this should be the original deleted page ID,
+         */
+	public static function onCategoryAfterPageRemoved( $category, $wikiPage, $id ) {
+
+		# Get title of the page and parent category the page was removed from
+		# e.g.: onCategoryAfterPageRemoved Category:Pippo categoryName: Difesa_e_Sicurezza
+                $pageRemovedTitle = $wikiPage->getTitle();	# e.g.: $pageRemovedTitle: Category:Pippo
+                $categoryName = $category->getName();		# e.g.: $categoryName: Pluto
+                $isCategory = str_starts_with($pageRemovedTitle, "Category:");
+                
+                # BreadCrumbs works only with Categories, the pages contained in a Category are automatically associated
+                if($isCategory){
+                        # Retrieves only current page name (category) and parent category name
+                        $pageRemovedTitle = str_replace("Category:", "", $pageRemovedTitle);
+                        $pageRemovedTitle = str_replace("_", " ", $pageRemovedTitle);
+                        $categoryName = str_replace("_", " ", $categoryName);
+
+			# Searches for breadcrubs containing the current page name (category) and removes them
+			# If the current page (category) is removed from the hierarchy, its children should be
+			# orphaned for this removes breadcrubs containing the current page name
+                        if($category->getPage()->exists() && $category->getPage()->canExist()){
+                                $updateClass = new BreadCrumbs2Update;
+                                $updateClass->removeBreadCrumbs( $categoryName, $pageRemovedTitle);
+                        }
+                }
+	}
+
+	public static function onBeforePageDisplay( OutputPage $out, Skin $skin ){
 	}
 }

@@ -18,12 +18,16 @@
 		]
 	},
 	"AutoloadClasses": {
+		"BreadCrumbs2Update": "BreadCrumbs2.update.php",
 		"BreadCrumbs2": "BreadCrumbs2.class.php",
 		"BreadCrumbs2Hooks": "BreadCrumbs2.hooks.php"
 	},
 	"Hooks": {
 		"SkinSubPageSubtitle": "BreadCrumbs2Hooks::onSkinSubPageSubtitle",
-		"SidebarBeforeOutput": "BreadCrumbs2Hooks::onSidebarBeforeOutput"
+		"SidebarBeforeOutput": "BreadCrumbs2Hooks::onSidebarBeforeOutput",
+		"PageSaveComplete": "BreadCrumbs2Hooks::onPageSaveComplete",
+		"CategoryAfterPageRemoved": "BreadCrumbs2Hooks::onCategoryAfterPageRemoved",
+		"BeforePageDisplay":"BreadCrumbs2Hooks::onBeforePageDisplay"
 	},
 	"config": {
 		"BreadCrumbs2RemoveBasePageLink": {
@@ -32,6 +36,10 @@
 		},
 		"BreadCrumbs2HideUnmatched": {
 			"description": "If no breadcrumbs are defined for this page, show nothing.",
+			"value": false
+		},
+		"BreadCrumbs2RelationshipHideRoot":{
+			"description": "The construction of the relationship ancestors do not take into account the older ancestor (the root of the tree)",
 			"value": false
 		}
 	},
